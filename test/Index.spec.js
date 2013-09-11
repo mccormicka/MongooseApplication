@@ -8,7 +8,7 @@ describe('MongooseApplication Tests', function () {
     var db = mongoose.createConnection('mongodb://localhost:3001/Whatever');
     var Index = require('../index');
     var schema = new mongoose.Schema();
-    schema.plugin(Index.plugin, {tableName: 'randomTableName'});
+    schema.plugin(Index.plugin, {tableName: 'randomTableName', apiKey:true});
     var Model = db.model('randommodel', schema);
 
     beforeEach(function (done) {
@@ -77,7 +77,6 @@ describe('MongooseApplication Tests', function () {
                     }
                 });
             });
-
         });
 
         describe('Application methods', function () {
@@ -284,11 +283,11 @@ describe('MongooseApplication Tests', function () {
             });
 
             it('Extend the application schema with the schema passed through the options object', function (done) {
-
                 var schema = new mongoose.Schema();
                 schema.plugin(Index.plugin,
                     {
-                        tableName: 'randomTableName2',
+                        tableName:'randomTableName2',
+                        name:String,
                         schema: {
                             customType: {
                                 type: Boolean,
@@ -316,10 +315,9 @@ describe('MongooseApplication Tests', function () {
         });
     });
 
-
     describe('API Key / Secret', function () {
 
-        it('Create a unique APIKey associated with the Application', function (done) {
+        it('Create a unique Consumer with Key associated with the Application if apiKey set to true', function (done) {
             Model.create({}, function (err, model) {
                 expect(err).toBeNull();
                 expect(model).toBeTruthy();
@@ -334,6 +332,8 @@ describe('MongooseApplication Tests', function () {
                                     expect(err).toBeNull();
                                     expect(apiKey).toBeDefined();
                                     if(apiKey){
+                                        expect(apiKey.key).toBeDefined();
+                                        expect(apiKey.secret).toBeDefined();
                                         expect(apiKey.modelId).toBe(result._id.toString());
                                         done(err);
                                     }else{
@@ -350,7 +350,7 @@ describe('MongooseApplication Tests', function () {
             });
         });
 
-        it('Create a unique APISecret associated with the Application', function (done) {
+        it('Create a unique Consumer with Secret associated with the Application', function (done) {
             Model.create({}, function (err, model) {
                 expect(err).toBeNull();
                 expect(model).toBeTruthy();
@@ -365,6 +365,8 @@ describe('MongooseApplication Tests', function () {
                                     expect(err).toBeNull();
                                     expect(apiSecret).toBeDefined();
                                     if(apiSecret){
+                                        expect(apiSecret.key).toBeDefined();
+                                        expect(apiSecret.secret).toBeDefined();
                                         expect(apiSecret.modelId).toBe(result._id.toString());
                                         done(err);
                                     }else{
@@ -390,7 +392,7 @@ describe('MongooseApplication Tests', function () {
                         expect(err).toBeNull();
                         expect(result).toBeTruthy();
                         result.apiKey(function (err, apiKey) {
-                            Model.findByRandomTableNameApiKey(apiKey.token, function(err, result){
+                            Model.findByRandomTableNameConsumerKey(apiKey.key, function(err, result){
                                 expect(err).toBeNull();
                                 expect(result).toBeDefined();
                                 if(result){
@@ -417,7 +419,7 @@ describe('MongooseApplication Tests', function () {
                         expect(err).toBeNull();
                         expect(result).toBeTruthy();
                         result.apiSecret(function (err, apiSecret) {
-                            Model.findByRandomTableNameApiSecret(apiSecret.token, function(err, result){
+                            Model.findByRandomTableNameConsumerSecret(apiSecret.secret, function(err, result){
                                 expect(err).toBeNull();
                                 expect(result).toBeDefined();
                                 if(result){
@@ -457,42 +459,6 @@ describe('MongooseApplication Tests', function () {
                                             });
                                         }else{
                                             done('Invalid api key');
-                                        }
-                                    });
-                                });
-
-                            } else {
-                                done('Error creating application');
-                            }
-                        });
-                } else {
-                    done('Error creating model');
-                }
-            });
-        });
-
-        it('Only allow an application to have one unique APISecret associated with it', function (done) {
-            Model.create({}, function (err, model) {
-                expect(err).toBeNull();
-                expect(model).toBeTruthy();
-                if (model) {
-                    model.createRandomTableName({name: 'TestApplication'},
-                        function (err, result) {
-                            expect(err).toBeNull();
-                            expect(result).toBeDefined();
-                            if (result) {
-                                expect(result.name).toBe('TestApplication');
-                                result.apiSecret(function(err, apiSecret){
-                                    result.createApiSecret(function(err, key){
-                                        expect(err).toBeNull();
-                                        expect(key).toBeDefined();
-                                        if(apiSecret){
-                                            result.apiSecret(function(err, newApiSecret){
-                                                expect(newApiSecret._id.toString()).not.toBe(apiSecret._id.toString());
-                                                done(err);
-                                            });
-                                        }else{
-                                            done('Invalid api Secret');
                                         }
                                     });
                                 });
